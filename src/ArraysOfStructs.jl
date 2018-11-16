@@ -7,6 +7,6 @@ module ArraysOfStructs
 using ArraysOfArrays
 using Tables
 
-# package code goes here
+include("array_of_structs.jl")
 
 end # module

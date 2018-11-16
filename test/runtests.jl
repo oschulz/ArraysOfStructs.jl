@@ -3,6 +3,6 @@
 import Test
 Test.@testset "Package ArraysOfStructs" begin
 
-# test code goes here
+include("test_array_of_structs.jl")
 
 end # testset
