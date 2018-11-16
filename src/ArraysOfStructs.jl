@@ -4,6 +4,9 @@ __precompile__(true)
 
 module ArraysOfStructs
 
+using ArraysOfArrays
+using Tables
+
 # package code goes here
 
 end # module
