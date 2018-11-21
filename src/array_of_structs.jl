@@ -1,32 +1,43 @@
 # This file is part of ArraysOfStructs.jl, licensed under the MIT License (MIT).
 
 
-Base.@pure soarepr_category(::Type{<:Array}) = Val{:array}()
+Base.@pure soarepr_category(::Type{<:AbstractArray}) = Val{:array}()
 Base.@pure soarepr_category(::Type{<:Tuple}) = Val{:tuple}()
 Base.@pure soarepr_category(::Type{<:StaticArray}) = Val{:tuple}()
 Base.@pure soarepr_category(::Type{<:FieldVector}) = Val{:struct}()
-Base.@pure soarepr_category(::Type{T}) where T = Val{isstructtype(T) ? :struct : primitive}()
+Base.@pure soarepr_category(::Type{T}) where T = Val{isstructtype(T) ? :struct : :primitive}()
 
 
 
-Base.@pure soa_coltype(::Type{<:AbstractArray{T,N}}) where {T,N} =
-    soa_coltype_impl(soarepr_category(T), Val{N}())
+soa_coltype(X::Type{<:AbstractArray{T,N}}) where {T,N} = begin
+    @info "soa_coltype($X)"
+    soa_coltype_impl(soarepr_category(T), T, Val{N}())
+end
 
 
-Base.@pure soa_coltype_impl(::Val{:array}, ::Type{<:AbstractArray{T,N}}, outerdims::Val...) where {T,N} =
+soa_coltype_impl(::Val{:array}, ::Type{<:AbstractArray{T,N}}, outerdims::Val...) where {T,N} = begin
+    @info "soa_coltype_impl(::Val{:array}, <:AbstractArray{$T,$N}, $outerdims)"
     soa_coltype_impl(soarepr_category(T), T, Val{N}(), outerdims...)
+end
 
 
-Base.@pure soa_coltype_impl(::Val{:primitive}, ::Type{T}) where {T} = T
+soa_coltype_impl(::Val{:primitive}, ::Type{T}) where {T} = begin
+    @info "soa_coltype_impl(::Val{:primitive}, $T)"
+    T
+end
 
-Base.@pure soa_coltype_impl(::Val{:primitive}, ::Type{T}, ::Val{N}, outerdims::Val...) where {T,N} =
+soa_coltype_impl(::Val{:primitive}, ::Type{T}, ::Val{N}, outerdims::Val...) where {T,N} = begin
+    @info "soa_coltype_impl(::Val{:primitive}, $T, Val{$N}(), $outerdims)"
     AbstractArray{<:soa_coltype_impl(Val{:primitive}(), T, outerdims...),N}
+end
 
-
-Base.@pure function soa_coltype_impl(::Val{:struct}, ::Type{T}, outerdims::Val...) where {T}
+function soa_coltype_impl(::Val{:struct}, ::Type{T}, outerdims::Val...) where {T}
+    @info "soa_coltype_impl(::Val{:struct}, $T, $outerdims)"
     syms = fieldnames(T)
     types = ntuple(Val(fieldcount(T))) do i
         U = fieldtype(T, i)
+        C = soarepr_category(U)
+        @info "    field $(fieldname(T, i)) has type $U and category $C"
         soa_coltype_impl(soarepr_category(U), U, outerdims...)
     end
     NamedTuple{syms,Tuple{types...}}

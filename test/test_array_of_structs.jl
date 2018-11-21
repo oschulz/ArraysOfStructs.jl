@@ -33,7 +33,7 @@ end
 struct FooBar{
     T<:Real,
     U<:Real,
-    TV<:AbstractVector{T},
+    TV<:AbstractVector{Point{T}},
     UM<:AbstractMatrix{U},
 }
     a::T
@@ -53,7 +53,7 @@ pointnt = (x = 1.2, y = 2.3, z = 3.4)
 nestedfoo = NestedFoo(4, simplefoo, point)
 nestednt = (a = 4, b = simplent, c = pointnt)
 
-foobar = FooBar(42, 4.2, [3, 4, 5], rand(4,5), simplefoo)
+foobar = FooBar(42, 4.2, [Point(1,2,3), Point(4,5,6)], rand(4,5), simplefoo)
 
 
 
