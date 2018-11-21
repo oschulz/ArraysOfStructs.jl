@@ -6,6 +6,7 @@ using Test
 using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
 
 using Random
+using StaticArrays
 
 
 struct SimpleFoo
@@ -42,6 +43,13 @@ simplent = (x = 42, y = 7)
 nestednt = (x = 4, y = 5, z = simplent)
 
 
+struct Point3D{T} <: FieldVector{3,T}
+    x::T
+    y::T
+    z::T
+end
+
+point = Point3D(1.2, 2.3, 3.4)
 
 
 @testset "array_of_structs" begin

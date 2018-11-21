@@ -5,7 +5,9 @@ __precompile__(true)
 module ArraysOfStructs
 
 using ArraysOfArrays
-using Tables
+
+import StaticArrays
+import Tables
 
 include("namedtuple_utils.jl")
 include("array_of_structs.jl")
