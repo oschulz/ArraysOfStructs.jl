@@ -3,7 +3,7 @@
 
 Base.@pure de_struct_type(T::Type{<:AbstractArray{U,N}}) where {U,N} = AbstractArray{<:de_struct_type(U),N}
 
-Base.@pure de_struct_type(T::Type{<:StaticArray{N,U}}) where {U,N} = StaticArray{N,<:de_struct_type(U)}
+# Base.@pure de_struct_type(T::Type{<:StaticArray{N,U}}) where {U,N} = StaticArray{N,<:de_struct_type(U)}
 
 Base.@pure de_struct_type(::Type{T}) where {T<:FieldVector} = _de_struct_type_impl(T)
 
