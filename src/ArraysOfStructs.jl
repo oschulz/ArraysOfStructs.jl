@@ -8,6 +8,7 @@ using ArraysOfArrays
 using NamedTupleTools
 using Tables
 
+include("namedtuple_utils.jl")
 include("array_of_structs.jl")
 
 end # module
