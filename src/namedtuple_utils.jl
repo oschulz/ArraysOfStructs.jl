@@ -1,6 +1,8 @@
 # This file is part of ArraysOfStructs.jl, licensed under the MIT License (MIT).
 
 
+Base.@pure de_struct_type(T::Type{<:AbstractArray{U,N}}) where {U,N} = AbstractArray{<:de_struct_type(U),N}
+
 Base.@pure function de_struct_type(::Type{T}) where {T}
     if @generated
         if isstructtype(T)
@@ -76,7 +78,3 @@ Base.@pure function val_of_fieldnames(::Type{T}) where {T}
         Val(fieldnames(T))
     end
 end
-
-
-# Base.@pure _getfieldtypes(::Type{<:NamedTuple{names, types}}) where {names, types} = types # necessary?
-# @inline _getfieldvalues(x::NamedTuple) = values(x)
