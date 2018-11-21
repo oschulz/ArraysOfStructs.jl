@@ -1,70 +1,80 @@
 # This file is part of ArraysOfStructs.jl, licensed under the MIT License (MIT).
 
 
-#Base.@pure namedtuple_type(::Type{T<:NamedTuple}) where {T} = T
-
-Base.@pure function namedtuple_type(::Type{T}) where {T}
-    if @generated
-        syms = :(())
-        types = :(Tuple{})
-        for i in Base.OneTo(fieldcount(T))
-            push!(syms.args, QuoteNode(fieldname(T, i)))
-            push!(types.args, fieldtype(T, i))
+Base.@pure function de_struct_type(::Type{T}) where {T}
+    #=if @generated
+        if isstructtype(T)
+            syms = :(())
+            types = :(Tuple{})
+            for i in Base.OneTo(fieldcount(T))
+                push!(syms.args, QuoteNode(fieldname(T, i)))
+                push!(types.args, fieldtype(T, i))
+            end
+            :(NamedTuple{$syms,$types})
+        else
+            :T
         end
-        :(NamedTuple{$syms,$types})
-    else
-        syms = fieldnames(T)
-        types = ntuple(i -> fieldtype(T, i), fieldcount(T))
-        NamedTuple{syms,Tuple{types...}}
-    end
+    else=#
+        if isstructtype(T)
+            syms = fieldnames(T)
+            types = ntuple(i -> de_struct_type(fieldtype(T, i)), fieldcount(T))
+            NamedTuple{syms,Tuple{types...}}
+        else
+            T
+        end
+    #end
 end
 
 
-# Note: isstructtype() may be useful
-
-
-ntconvert(::Type{NamedTuple}, x::NamedTuple) = x
-
-ntconvert(::Type{T}, x::T) where {T<:NamedTuple} = x
-
-@inline function ntconvert(::Type{NamedTuple}, x::T) where {T}
-    if @generated
-        nt = :(())
-        for name in fieldnames(T)
-            push!(nt.args, :($name = x.$name))
+@inline function de_struct(x::T) where {T}
+    #=if @generated
+        if isstructtype(T)
+            nt = :(())
+            for sym in fieldnames(T)
+                push!(nt.args, :($sym = de_struct(x.$sym)))
+            end
+            :($nt)
+        else
+            :x
         end
-        :($nt)
-    else
-        syms = fieldnames(T)
-        vals = ((getfield(x, sym) for sym in syms)...,)
-        NamedTuple{syms}(vals)
-    end
+    else=#
+        if isstructtype(T)
+            syms = fieldnames(T)
+            vals = map(sym -> de_struct(getfield(x, sym)), syms)
+            NamedTuple{syms}(vals)
+        else
+            x
+        end
+    #end
 end
 
 
-@inline function ntconvert(::Type{T}, x::NT) where {T,NT<:NamedTuple}
-    _getfieldnames(T) == _getfieldnames(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
-    if @generated
+@inline re_struct(::Type{T}, x) where {T} = convert(T, x)
+
+@inline function re_struct(::Type{T}, x::NT) where {T,NT<:NamedTuple}
+    _fast_fieldnames(T) == _fast_fieldnames(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
+    #=if @generated
         expr = :($T())
         for i in Base.OneTo(fieldcount(NT))
             sym = fieldname(NT, i)
-            push!(expr.args, :(x.$sym))
+            U = fieldtype(T, i)
+            push!(expr.args, :(re_struct($U, x.$sym)))
         end
         expr
-    else
-        T(x...)
-    end
+    else=#
+        T(ntuple(i -> re_struct(fieldtype(T, i), fieldvalue(x, i)), fieldcount(T))...)
+    #end
 end
 
 
-Base.@pure _getfieldnames(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
+Base.@pure _fast_fieldnames(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
 
-Base.@pure function _getfieldnames(::Type{T}) where {T}
-    if @generated
+Base.@pure function _fast_fieldnames(::Type{T}) where {T}
+    #=if @generated
         :(Val{$(fieldnames(T))}())
-    else
+    else=#
         Val(fieldnames(T))
-    end
+    #end
 end
 
 

@@ -11,6 +11,12 @@ struct SimpleFoo
     y::Float64
 end
 
+struct NestedFoo
+    x::Int
+    y::Float64
+    z::SimpleFoo
+end
+
 struct FooBar{
     T<:Real,
     U<:Real,
@@ -26,14 +32,19 @@ end
 
 simplefoo = SimpleFoo(33, 7.1)
 
+nestedfoo = NestedFoo(33, 7.1, simplefoo)
+
 foobar = FooBar(42, 4.2, [3, 4, 5], rand(4,5), simplefoo)
 
-nt = (x = 42, y = 7)
+simplent = (x = 42, y = 7)
+nestednt = (x = 42, y = 7, z = (x = 2, y = 3))
 
 
-using ArraysOfStructs: _getfieldnames, namedtuple_type, ntconvert
+using ArraysOfStructs: _fast_fieldnames, de_struct_type, de_struct, re_struct
 
 
 @testset "array_of_structs" begin
-    @test ntconvert(NamedTuple, foobar) isa namedtuple_type(typeof(foobar))
+    @test de_struct(simplefoo) isa de_struct_type(typeof(simplefoo))
+    @test de_struct(nestedfoo) isa de_struct_type(typeof(nestedfoo))
+    @test de_struct(foobar) isa de_struct_type(typeof(foobar))
 end
