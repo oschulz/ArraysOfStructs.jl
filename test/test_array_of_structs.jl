@@ -47,31 +47,31 @@ nestednt = (x = 4, y = 5, z = simplent)
 @testset "array_of_structs" begin
     @test @inferred(val_of_fieldnames(FooBar)) == Val((:a, :b, :cv, :dm, :e))
 
-    @inferred(de_struct(simplefoo)) == simplent
-    @inferred(de_struct(nestedfoo)) == nestednt
-    # @inferred(de_struct(foobar)) == foobarnt
+    @test @inferred(de_struct(simplefoo)) == simplent
+    @test @inferred(de_struct(nestedfoo)) == nestednt
+    # @test @inferred(de_struct(foobar)) == foobarnt
 
     @test @inferred(de_struct(simplefoo)) isa @inferred(de_struct_type(typeof(simplefoo)))
     @test @inferred(de_struct(nestedfoo)) isa @inferred(de_struct_type(typeof(nestedfoo)))
     # @test @inferred(de_struct(foobar)) isa @inferred(de_struct_type(typeof(foobar)))
 
-    @inferred(re_struct(SimpleFoo, simplent)) == simplefoo
-    @inferred(re_struct(NestedFoo, nestedfoo)) == nestedfoo
-    # @inferred(re_struct(FooBar, foobar)) == foobarnt
+    @test @inferred(re_struct(SimpleFoo, simplent)) == simplefoo
+    @test @inferred(re_struct(NestedFoo, nestedfoo)) == nestedfoo
+    # @test @inferred(re_struct(FooBar, foobar)) == foobarnt
 
     #=
     @test (val_of_fieldnames(FooBar)) == Val((:a, :b, :cv, :dm, :e))
 
-    (de_struct(simplefoo)) == simplent
-    (de_struct(nestedfoo)) == nestednt
-    # (de_struct(foobar)) == foobarnt
+    @test (de_struct(simplefoo)) == simplent
+    @test (de_struct(nestedfoo)) == nestednt
+    # @test (de_struct(foobar)) == foobarnt
 
     @test (de_struct(simplefoo)) isa (de_struct_type(typeof(simplefoo)))
     @test (de_struct(nestedfoo)) isa (de_struct_type(typeof(nestedfoo)))
     # @test (de_struct(foobar)) isa (de_struct_type(typeof(foobar)))
 
-    (re_struct(SimpleFoo, simplent)) == simplefoo
-    (re_struct(NestedFoo, nestedfoo)) == nestedfoo
-    # (re_struct(FooBar, foobar)) == foobarnt
+    @test (re_struct(SimpleFoo, simplent)) == simplefoo
+    @test (re_struct(NestedFoo, nestedfoo)) == nestedfoo
+    # @test (re_struct(FooBar, foobar)) == foobarnt
     =#
 end
