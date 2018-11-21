@@ -67,7 +67,7 @@ foobar = FooBar(42, 4.2, [3, 4, 5], rand(4,5), simplefoo)
     # @test @inferred(de_struct(foobar)) isa @inferred(de_struct_type(typeof(foobar)))
 
     @test @inferred(re_struct(SimpleFoo, simplent)) == simplefoo
-    @test @inferred(re_struct(NestedFoo, nestedfoo)) == nestedfoo
+    @test @inferred(re_struct(NestedFoo, nestednt)) == nestedfoo
     # @test @inferred(re_struct(FooBar, foobar)) == foobarnt
 
     #=
@@ -82,7 +82,7 @@ foobar = FooBar(42, 4.2, [3, 4, 5], rand(4,5), simplefoo)
     # @test (de_struct(foobar)) isa (de_struct_type(typeof(foobar)))
 
     @test (re_struct(SimpleFoo, simplent)) == simplefoo
-    @test (re_struct(NestedFoo, nestedfoo)) == nestedfoo
+    @test (re_struct(NestedFoo, nestednt)) == nestedfoo
     # @test (re_struct(FooBar, foobar)) == foobarnt
     =#
 end
