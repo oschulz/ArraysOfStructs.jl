@@ -2,19 +2,19 @@
 
 
 Base.@pure function de_struct_type(::Type{T}) where {T}
-    #=if @generated
+    if @generated
         if isstructtype(T)
             syms = :(())
             types = :(Tuple{})
             for i in Base.OneTo(fieldcount(T))
                 push!(syms.args, QuoteNode(fieldname(T, i)))
-                push!(types.args, fieldtype(T, i))
+                push!(types.args, de_struct_type(fieldtype(T, i)))
             end
             :(NamedTuple{$syms,$types})
         else
             :T
         end
-    else=#
+    else
         if isstructtype(T)
             syms = fieldnames(T)
             types = ntuple(i -> de_struct_type(fieldtype(T, i)), fieldcount(T))
@@ -22,12 +22,12 @@ Base.@pure function de_struct_type(::Type{T}) where {T}
         else
             T
         end
-    #end
+    end
 end
 
 
 @inline function de_struct(x::T) where {T}
-    #=if @generated
+    if @generated
         if isstructtype(T)
             nt = :(())
             for sym in fieldnames(T)
@@ -37,7 +37,7 @@ end
         else
             :x
         end
-    else=#
+    else
         if isstructtype(T)
             syms = fieldnames(T)
             vals = map(sym -> de_struct(getfield(x, sym)), syms)
@@ -45,15 +45,15 @@ end
         else
             x
         end
-    #end
+    end
 end
 
 
 @inline re_struct(::Type{T}, x) where {T} = convert(T, x)
 
 @inline function re_struct(::Type{T}, x::NT) where {T,NT<:NamedTuple}
-    _fast_fieldnames(T) == _fast_fieldnames(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
-    #=if @generated
+    fieldnames_as_val(T) == fieldnames_as_val(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
+    if @generated
         expr = :($T())
         for i in Base.OneTo(fieldcount(NT))
             sym = fieldname(NT, i)
@@ -61,20 +61,20 @@ end
             push!(expr.args, :(re_struct($U, x.$sym)))
         end
         expr
-    else=#
-        T(ntuple(i -> re_struct(fieldtype(T, i), fieldvalue(x, i)), fieldcount(T))...)
-    #end
+    else
+        T(ntuple(i -> re_struct(fieldtype(T, i), getfield(x, i)), fieldcount(T))...)
+    end
 end
 
 
-Base.@pure _fast_fieldnames(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
+Base.@pure fieldnames_as_val(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
 
-Base.@pure function _fast_fieldnames(::Type{T}) where {T}
-    #=if @generated
+Base.@pure function fieldnames_as_val(::Type{T}) where {T}
+    if @generated
         :(Val{$(fieldnames(T))}())
-    else=#
+    else
         Val(fieldnames(T))
-    #end
+    end
 end
 
 
