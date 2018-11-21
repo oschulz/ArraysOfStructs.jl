@@ -52,7 +52,7 @@ end
 @inline re_struct(::Type{T}, x) where {T} = convert(T, x)
 
 @inline function re_struct(::Type{T}, x::NT) where {T,NT<:NamedTuple}
-    fieldnames_as_val(T) == fieldnames_as_val(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
+    val_of_fieldnames(T) == val_of_fieldnames(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
     if @generated
         expr = :($T())
         for i in Base.OneTo(fieldcount(NT))
@@ -67,9 +67,9 @@ end
 end
 
 
-Base.@pure fieldnames_as_val(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
+Base.@pure val_of_fieldnames(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
 
-Base.@pure function fieldnames_as_val(::Type{T}) where {T}
+Base.@pure function val_of_fieldnames(::Type{T}) where {T}
     if @generated
         :(Val{$(fieldnames(T))}())
     else

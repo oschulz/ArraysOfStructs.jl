@@ -3,6 +3,8 @@
 using ArraysOfStructs
 using Test
 
+using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
+
 using Random
 
 
@@ -40,11 +42,10 @@ simplent = (x = 42, y = 7)
 nestednt = (x = 4, y = 5, z = simplent)
 
 
-using ArraysOfStructs: fieldnames_as_val, de_struct_type, de_struct, re_struct
 
 
 @testset "array_of_structs" begin
-    @test @inferred(fieldnames_as_val(FooBar)) == Val((:a, :b, :cv, :dm, :e))
+    @test @inferred(val_of_fieldnames(FooBar)) == Val((:a, :b, :cv, :dm, :e))
 
     @inferred(de_struct(simplefoo)) == simplent
     @inferred(de_struct(nestedfoo)) == nestednt
@@ -59,7 +60,7 @@ using ArraysOfStructs: fieldnames_as_val, de_struct_type, de_struct, re_struct
     # @inferred(re_struct(FooBar, foobar)) == foobarnt
 
     #=
-    @test (fieldnames_as_val(FooBar)) == Val((:a, :b, :cv, :dm, :e))
+    @test (val_of_fieldnames(FooBar)) == Val((:a, :b, :cv, :dm, :e))
 
     (de_struct(simplefoo)) == simplent
     (de_struct(nestedfoo)) == nestednt
