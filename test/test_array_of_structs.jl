@@ -31,7 +31,7 @@ foobar = FooBar(42, 4.2, [3, 4, 5], rand(4,5), simplefoo)
 nt = (x = 42, y = 7)
 
 
-using ArraysOfStructs: _getfieldnames, _getfieldtypes, namedtuple_type, ntconvert
+using ArraysOfStructs: _getfieldnames, namedtuple_type, ntconvert
 
 
 @testset "array_of_structs" begin

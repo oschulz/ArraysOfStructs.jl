@@ -78,18 +78,21 @@ end
 
 Base.@pure _getfieldnames(::Type{<:NamedTuple{names, types}}) where {names, types} = Val{names}()
 
-Base.@pure @generated function _getfieldnames(::Type{T}) where {T}
-    names = :(())
-    for i in Base.OneTo(fieldcount(T))
-        push!(names.args, QuoteNode(fieldname(T, i)))
+Base.@pure function _getfieldnames(::Type{T}) where {T}
+    if @generated
+        names = :(())
+        for i in Base.OneTo(fieldcount(T))
+            push!(names.args, QuoteNode(fieldname(T, i)))
+        end
+        :(Val{$names}())
+    else
+        Val(fieldnames(T))
     end
-
-    :(Val{$names}())
 end
 
 
-Base.@pure _getfieldtypes(::Type{<:NamedTuple{names, types}}) where {names, types} = types # necessary?
-@inline _getfieldvalues(x::NamedTuple) = values(x)
+# Base.@pure _getfieldtypes(::Type{<:NamedTuple{names, types}}) where {names, types} = types # necessary?
+# @inline _getfieldvalues(x::NamedTuple) = values(x)
 
 
 
