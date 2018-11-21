@@ -3,7 +3,13 @@
 
 Base.@pure de_struct_type(T::Type{<:AbstractArray{U,N}}) where {U,N} = AbstractArray{<:de_struct_type(U),N}
 
-Base.@pure function de_struct_type(::Type{T}) where {T}
+Base.@pure de_struct_type(T::Type{<:StaticArray{N,U}}) where {U,N} = StaticArray{N,<:de_struct_type(U)}
+
+Base.@pure de_struct_type(::Type{T}) where {T<:FieldVector} = _de_struct_type_impl(T)
+
+Base.@pure de_struct_type(::Type{T}) where {T} = _de_struct_type_impl(T)
+
+Base.@pure function _de_struct_type_impl(::Type{T}) where {T}
     if @generated
         if isstructtype(T)
             syms = :(())

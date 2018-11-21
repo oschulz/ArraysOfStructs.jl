@@ -14,10 +14,18 @@ struct SimpleFoo
     y::Float64
 end
 
-struct NestedFoo
-    x::Int
-    y::Float64
-    z::SimpleFoo
+
+struct Point{T} <: FieldVector{3,T}
+    x::T
+    y::T
+    z::T
+end
+
+
+struct NestedFoo{T}
+    a::Int
+    b::SimpleFoo
+    c::Point{T}
 end
 
 struct FooBar{
@@ -33,23 +41,18 @@ struct FooBar{
     e::SimpleFoo
 end
 
-simplefoo = SimpleFoo(42, 7)
 
-nestedfoo = NestedFoo(4, 5, simplefoo)
+simplefoo = SimpleFoo(42, 7)
+simplent = (x = 42, y = 7)
+
+point = Point(1.2, 2.3, 3.4)
+pointnt = (x = 1.2, y = 2.3, z = 3.4)
+
+nestedfoo = NestedFoo(4, simplefoo, point)
+nestednt = (a = 4, b = simplent, c = pointnt)
 
 foobar = FooBar(42, 4.2, [3, 4, 5], rand(4,5), simplefoo)
 
-simplent = (x = 42, y = 7)
-nestednt = (x = 4, y = 5, z = simplent)
-
-
-struct Point3D{T} <: FieldVector{3,T}
-    x::T
-    y::T
-    z::T
-end
-
-point = Point3D(1.2, 2.3, 3.4)
 
 
 @testset "array_of_structs" begin
