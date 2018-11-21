@@ -1,6 +1,9 @@
 # This file is part of ArraysOfStructs.jl, licensed under the MIT License (MIT).
 
 
+ #!!!! TODO: Split of as new package "TuplesAndStructs.jl" or so?
+ 
+
 Base.@pure de_struct_type(T::Type{<:AbstractArray{U,N}}) where {U,N} = AbstractArray{<:de_struct_type(U),N}
 
 # Base.@pure de_struct_type(T::Type{<:StaticArray{N,U}}) where {U,N} = StaticArray{N,<:de_struct_type(U)}
@@ -41,7 +44,7 @@ end
             for sym in fieldnames(T)
                 push!(nt.args, :($sym = de_struct(x.$sym)))
             end
-            :($nt)
+            nt
         else
             :x
         end
