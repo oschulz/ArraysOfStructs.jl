@@ -3,8 +3,8 @@
 using ArraysOfStructs
 using Test
 
-using ArraysOfStructs: type_category_val, val_of_fieldnames, de_struct_type, de_struct, re_struct
-# using ArraysOfStructs: soa_fieldtypes
+using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
+using ArraysOfStructs: soarepr_category, soa_coltype, soa_coltype_impl
 
 
 using Random
