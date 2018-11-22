@@ -46,15 +46,22 @@ end
 
 simplefoo = SimpleFoo(42, 7)
 simplent = (x = 42, y = 7)
+simplentv = (x = [42], y = [7])
 
 point = Point(1.2, 2.3, 3.4)
 pointnt = (x = 1.2, y = 2.3, z = 3.4)
+pointntv = (x = [1.2], y = [2.3], z = [3.4])
 
 nestedfoo = NestedFoo(4, simplefoo, point)
 nestednt = (a = 4, b = simplent, c = pointnt)
+nestedntv = (a = [4], b = [simplent], c = pointntv)
 
 foobar = FooBar(42, 4.2, [Point(1,2,3), Point(4,5,6)], rand(4,5), simplefoo)
+foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foobar.dm, e = simplent)
 
+foobarntv = (a = [42], b = [4.2], cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = [foobar.dm], e = simplentv)
+
+A = ArrayOfStructs{FooBar,1}(Val(:unsafe),foobarntv)
 
 
 @testset "array_of_structs" begin
@@ -88,3 +95,11 @@ foobar = FooBar(42, 4.2, [Point(1,2,3), Point(4,5,6)], rand(4,5), simplefoo)
     # @test (re_struct(FooBar, foobar)) == foobarnt
     =#
 end
+
+
+#=
+#TODO:
+
+soa_coltype(foobar)
+
+=#

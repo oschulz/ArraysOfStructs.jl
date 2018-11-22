@@ -98,18 +98,24 @@ a(a(s)) tuple()
 
  
 
-#=
 
 
-abstract type AbstractArrayOfStructs end
+abstract type AbstractArrayOfStructs{T,N} <: AbstractArray{T,N} end
+export AbstractArrayOfStructs
 
 
-struct ArrayOfStructs{T,N,P<:NamedTuple}
+
+struct ArrayOfStructs{T,N,P<:NamedTuple} <: AbstractArrayOfStructs{T,N}
     _entries::P
 
     ArrayOfStructs{T,N}(::Val{:unsafe}, entries::NamedTuple) where {T,N} =
         new{T,N,typeof(entries)}(entries)
 end
+
+export ArrayOfStructs
+
+
+#=
 
 
 @inline soacolumn_repr_impl(::Val{:primitive}, ::Type{AbstractArray{T,N}}, x::AbstractArray{T,N}) = x
