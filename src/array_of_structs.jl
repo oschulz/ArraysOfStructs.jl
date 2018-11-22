@@ -56,6 +56,7 @@ Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
 _soa_repr_leaf(::Type{T}, x::T) where {T} = x
 _soa_repr_leaf(::Type{T}, x::U) where {T,U} = convert(T, x)
 
+
 function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,syms}
     nfields_T = fieldcount(T)
     nfields_N = length(syms)
@@ -75,6 +76,7 @@ end
 
 
 @inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
+@inline _getcolvalues(A::ArrayOfStructs) = values(_getentries(A))
 @inline _getfirstcol(A::ArrayOfStructs) = _getentries(A)[1]
 
 @inline Base.getproperty(A::ArrayOfStructs, sym::Symbol) = getproperty(_getentries(A), sym)
@@ -82,7 +84,10 @@ end
 
 @inline Base.size(A::ArrayOfStructs) = size(_getfirstcol(A))
 
-
+Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, i::Real) where {T,N}
+    #!!!T(map(col -> getindex(col, i), _getcolvalues(A))...)
+    map(col -> getindex(col, i), _getcolvalues(A))
+end
 
 
 
