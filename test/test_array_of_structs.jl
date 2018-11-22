@@ -62,9 +62,9 @@ foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foo
 
 foobarntv = (a = [42], b = [4.2], cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = [foobar.dm], e = simplentv)
 
-# A = ArrayOfStructs{SimpleFoo}(simplentv)
-# A = ArrayOfStructs{SimpleFoo}(nestedntv)
-# A = ArrayOfStructs{FooBar}(foobarntv)
+# A = VectorOfStructs{SimpleFoo}(simplentv);
+# A = VectorOfStructs{NestedFoo}(nestedntv);
+# A = VectorOfStructs{FooBar}(foobarntv);
 
 
 @testset "array_of_structs" begin

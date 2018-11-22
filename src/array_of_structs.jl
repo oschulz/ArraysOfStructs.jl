@@ -116,6 +116,11 @@ end
 
 export ArrayOfStructs
 
+ArrayOfStructs{T,N}(entries::Any) where {T,N} = soa_repr(Val{(N,)}(), T, entries)
+
+
+const VectorOfStructs{T,P<:SOACols{1}} = ArrayOfStructs{T,1,P}
+export VectorOfStructs
 
 #=
 function ArrayOfStructs{T}(entries::SOACols{N,ncols,colnames}) where {T,N,p<:SOACols{N}}
@@ -151,18 +156,19 @@ Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
     _soa_repr_leaf(nested_array_type(T, dims), x)
 
 _soa_repr_leaf(::Type{T}, x::T) where {T} = x
+_soa_repr_leaf(::Type{T}, x::U) where {T,U} = convert(T, x)
 
-function soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple) where {dims,T}
-#    cols = map(Base.OneTo(fieldcount(T))) do i
-#        sym_T = fieldname(T,i)
-#        sym_N = fieldname(x,i)
-#        sym_T == sym_y || throw(ArgumentError("Expected field $sym_T in named tuple but got sym_N"))
-#        U = fieldtype(T, i)
-#        value = getfield(x, i)
-#        soa_repr(::Val{dims}(), U, value)
-#    end
-#    NamedTuple{syms}(cols)
-
+function soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,syms}
+    cols = map(Base.OneTo(fieldcount(T))) do i
+        sym_T = fieldname(T,i)
+        sym_N = syms[i]
+        sym_T == sym_N || throw(ArgumentError("Expected field $sym_T in named tuple but got sym_N"))
+        U = fieldtype(T, i)
+        value = getfield(x, i)
+        soa_repr(Val{dims}(), U, value)
+    end
+    colsnt = NamedTuple{syms}(cols)
+    ArrayOfStructs{T,first(dims),typeof(colsnt)}(Val(:unsafe), colsnt);
 end
 
 #soa_repr(::Type{T}, AbstractArray{T,N}, x::NamedTuple) where {T,N} = ArrayOfStructs{T}(x)
