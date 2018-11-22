@@ -155,11 +155,24 @@ Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
 @inline soa_repr(dims::Val, ::Type{T}, x::AbstractArray{U,N}) where {T,N,U} =
     _soa_repr_leaf(nested_array_type(T, dims), x)
 
+@inline soa_repr(::Val{dims}, ::Type{<:AbstractArray{T,N}}, x::NamedTuple{syms}) where {dims,T,N,syms} =
+    soa_repr(Val{(dims...,N)}(), T, x)
+
+@inline soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T<:FieldVector,N,syms} =
+    _soa_repr_struct(Val{dims}(), T, x)
+
+@inline soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,N,syms} =
+    _soa_repr_struct(Val{dims}(), T, x)
+
+
 _soa_repr_leaf(::Type{T}, x::T) where {T} = x
 _soa_repr_leaf(::Type{T}, x::U) where {T,U} = convert(T, x)
 
-function soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,syms}
-    cols = map(Base.OneTo(fieldcount(T))) do i
+function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,syms}
+    nfields_T = fieldcount(T)
+    nfields_N = length(syms)
+    nfields_T == nfields_N || throw(ArgumentError("Type $T has $nfields_T fields, can't represent by NamedTuple with $nfields_N fields"))
+    cols = map(Base.OneTo(nfields_T)) do i
         sym_T = fieldname(T,i)
         sym_N = syms[i]
         sym_T == sym_N || throw(ArgumentError("Expected field $sym_T in named tuple but got sym_N"))
@@ -170,6 +183,9 @@ function soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,sym
     colsnt = NamedTuple{syms}(cols)
     ArrayOfStructs{T,first(dims),typeof(colsnt)}(Val(:unsafe), colsnt);
 end
+
+
+
 
 #soa_repr(::Type{T}, AbstractArray{T,N}, x::NamedTuple) where {T,N} = ArrayOfStructs{T}(x)
 

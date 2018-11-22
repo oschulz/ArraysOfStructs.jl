@@ -60,11 +60,11 @@ nestedntv = (a = [4], b = simplentv, c = pointntv)
 foobar = FooBar(42, 4.2, [Point(1,2,3), Point(4,5,6)], rand(4,5), simplefoo)
 foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foobar.dm, e = simplent)
 
-foobarntv = (a = [42], b = [4.2], cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = [foobar.dm], e = simplentv)
+foobarntv = (a = [42], b = [4.2], cv = (x = [[1, 4]], y = [[2, 5]], z = [[3, 6]]), dm = [foobar.dm], e = simplentv)
 
-# A = VectorOfStructs{SimpleFoo}(simplentv);
-# A = VectorOfStructs{NestedFoo}(nestedntv);
-# A = VectorOfStructs{FooBar}(foobarntv);
+A = VectorOfStructs{SimpleFoo}(simplentv);
+A = VectorOfStructs{NestedFoo}(nestedntv);
+A = VectorOfStructs{FooBar{Int64,Float64}}(foobarntv);
 
 
 @testset "array_of_structs" begin
