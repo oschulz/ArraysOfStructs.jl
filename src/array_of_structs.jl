@@ -25,6 +25,18 @@ export VectorOfStructs
 
 
 
+# Need: Array{ArrayOfStructs}
+
+struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N} <: AbstractArrayOfStructs{T,N}
+    _inner::T
+end
+
+
+
+
+
+
+
 Base.@pure function nested_array_type(::Type{T}, outer::Val{dims}) where {T,dims}
     _nested_array_type_impl(T, dims...)
 end
