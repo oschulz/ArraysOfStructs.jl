@@ -104,22 +104,21 @@ abstract type AbstractArrayOfStructs{T,N} <: AbstractArray{T,N} end
 export AbstractArrayOfStructs
 
 
-_getrefcolumn(cols::NamedTuple) = _getrefcolumn(cols[1])
-_getrefcolumn(cols::Tuple) = _getrefcolumn(cols[1])
-_getrefcolumn(col1::AbstractArray) = col1
+const SOAColumn{N} = AbstractArray{T,N} where T
+const SOACols{N,ncols,colnames} = NamedTuple{colnames,<:NTuple{ncols,SOAColumn{N}}} where {N,ncols,colnames}
 
 
-struct ArrayOfStructs{T,N,P<:NamedTuple,U,R<:AbstractArray{U,N}} <: AbstractArrayOfStructs{T,N}
+struct ArrayOfStructs{T,N,P<:SOACols{N}} <: AbstractArrayOfStructs{T,N}
     _entries::P
-    _refcolumn::R
 
-    ArrayOfStructs{T,N,P,U,R}(::Val{:unsafe}, entries::NamedTuple, refcolumn::AbstractArray{U,N}) where {T,N,P,U,R} =
-        new{T,N,P,U,R}(entries, refcolumn)
+    ArrayOfStructs{T,N,P}(::Val{:unsafe}, entries::P) where {T,N,P<:SOACols{N}} = new{T,N,P}(entries)
 end
 
 export ArrayOfStructs
 
-function ArrayOfStructs{T}(entries::NamedTuple) where {T}
+
+#=
+function ArrayOfStructs{T}(entries::SOACols{N,ncols,colnames}) where {T,N,p<:SOACols{N}}
     refcolumn = _getrefcolumn(entries)
     N = ndims(refcolumn)
     P = typeof(entries)
@@ -130,6 +129,7 @@ function ArrayOfStructs{T}(entries::NamedTuple) where {T}
 
     ArrayOfStructs{T,N,P,U,R}(Val{:unsafe}(), entries, refcolumn)
 end
+=#
 
 
 # Note: Probably can't support static arrays, as index/fieldname duality would be ambiguous
@@ -148,11 +148,22 @@ Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
 
 
 @inline soa_repr(dims::Val, ::Type{T}, x::AbstractArray{U,N}) where {T,N,U} =
-    soa_repr(nested_array_type(T, dims), x)
+    _soa_repr_leaf(nested_array_type(T, dims), x)
 
-soa_repr(::Type{T}, x::T) where {T} = x
+_soa_repr_leaf(::Type{T}, x::T) where {T} = x
 
-#soa_repr(::Type{T}, x::AbstractArray{U,N}, outer::Val) where {T,N,U} = x
+function soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple) where {dims,T}
+#    cols = map(Base.OneTo(fieldcount(T))) do i
+#        sym_T = fieldname(T,i)
+#        sym_N = fieldname(x,i)
+#        sym_T == sym_y || throw(ArgumentError("Expected field $sym_T in named tuple but got sym_N"))
+#        U = fieldtype(T, i)
+#        value = getfield(x, i)
+#        soa_repr(::Val{dims}(), U, value)
+#    end
+#    NamedTuple{syms}(cols)
+
+end
 
 #soa_repr(::Type{T}, AbstractArray{T,N}, x::NamedTuple) where {T,N} = ArrayOfStructs{T}(x)
 
@@ -160,13 +171,12 @@ soa_repr(::Type{T}, x::T) where {T} = x
 
 
 @inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
-@inline _getrefcolumn(A::ArrayOfStructs) = getfield(A, :_refcolumn)
+@inline _getfirstcol(A::ArrayOfStructs) = _getentries(A)[1]
 
 @inline Base.getproperty(A::ArrayOfStructs, sym::Symbol) = getproperty(_getentries(A), sym)
 @inline Base.propertynames(A::ArrayOfStructs) = propertynames(_getentries(A))
 
-@inline Base.size(A::ArrayOfStructs) = size(_getrefcolumn(A))
-
+@inline Base.size(A::ArrayOfStructs) = size(_getfirstcol(A))
 
 
 
