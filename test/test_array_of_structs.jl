@@ -5,7 +5,7 @@ using Test
 
 using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
 using ArraysOfStructs: soarepr_category, soa_coltype, soa_coltype_impl
-using ArraysOfStructs: nested_array_type, _nested_array_type_impl
+using ArraysOfStructs: nested_array_type, _nested_array_type_impl, soa_repr 
 
 
 using Random
@@ -55,7 +55,7 @@ pointntv = (x = [1.2], y = [2.3], z = [3.4])
 
 nestedfoo = NestedFoo(4, simplefoo, point)
 nestednt = (a = 4, b = simplent, c = pointnt)
-nestedntv = (a = [4], b = [simplent], c = pointntv)
+nestedntv = (a = [4], b = simplentv, c = pointntv)
 
 foobar = FooBar(42, 4.2, [Point(1,2,3), Point(4,5,6)], rand(4,5), simplefoo)
 foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foobar.dm, e = simplent)

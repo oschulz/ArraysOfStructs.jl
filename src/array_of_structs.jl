@@ -134,6 +134,7 @@ end
 
 # Note: Probably can't support static arrays, as index/fieldname duality would be ambiguous
 
+
 Base.@pure function nested_array_type(::Type{T}, outer::Val{dims}) where {T,dims}
     _nested_array_type_impl(T, dims...)
 end
@@ -144,6 +145,12 @@ Base.@pure _nested_array_type_impl(::Type{T}, N) where {T} = AbstractArray{T, N}
 
 Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
     AbstractArray{<:_nested_array_type_impl(T, M, dims...), N}
+
+
+@inline soa_repr(dims::Val, ::Type{T}, x::AbstractArray{U,N}) where {T,N,U} =
+    soa_repr(nested_array_type(T, dims), x)
+
+soa_repr(::Type{T}, x::T) where {T} = x
 
 #soa_repr(::Type{T}, x::AbstractArray{U,N}, outer::Val) where {T,N,U} = x
 
