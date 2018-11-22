@@ -61,7 +61,8 @@ foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foo
 
 foobarntv = (a = [42], b = [4.2], cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = [foobar.dm], e = simplentv)
 
-A = ArrayOfStructs{FooBar,1}(Val(:unsafe),foobarntv)
+# A = ArrayOfStructs{SimpleFoo}(simplentv)
+A = ArrayOfStructs{FooBar}(foobarntv)
 
 
 @testset "array_of_structs" begin

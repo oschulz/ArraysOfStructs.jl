@@ -104,15 +104,44 @@ abstract type AbstractArrayOfStructs{T,N} <: AbstractArray{T,N} end
 export AbstractArrayOfStructs
 
 
+_getrefcolumn(cols::NamedTuple) = _getrefcolumn(cols[1])
+_getrefcolumn(cols::Tuple) = _getrefcolumn(cols[1])
+_getrefcolumn(col1::AbstractArray) = col1
 
-struct ArrayOfStructs{T,N,P<:NamedTuple} <: AbstractArrayOfStructs{T,N}
+
+struct ArrayOfStructs{T,N,P<:NamedTuple,U,R<:AbstractArray{U,N}} <: AbstractArrayOfStructs{T,N}
     _entries::P
+    _refcolumn::R
 
-    ArrayOfStructs{T,N}(::Val{:unsafe}, entries::NamedTuple) where {T,N} =
-        new{T,N,typeof(entries)}(entries)
+    ArrayOfStructs{T,N,P,U,R}(::Val{:unsafe}, entries::NamedTuple, refcolumn::AbstractArray{U,N}) where {T,N,P,U,R} =
+        new{T,N,P,U,R}(entries, refcolumn)
 end
 
 export ArrayOfStructs
+
+function ArrayOfStructs{T}(entries::NamedTuple) where {T}
+    refcolumn = _getrefcolumn(entries)
+    N = ndims(refcolumn)
+    P = typeof(entries)
+    U = eltype(refcolumn)
+    R = typeof(refcolumn)
+
+    # TODO: Wrap inner named tuples in ArrayOfStructs
+
+    ArrayOfStructs{T,N,P,U,R}(Val{:unsafe}(), entries, refcolumn)
+end
+
+
+# Note: Probably can't support static arrays, as index/fieldname duality would be ambiguous
+
+
+@inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
+@inline _getrefcolumn(A::ArrayOfStructs) = getfield(A, :_refcolumn)
+
+@inline Base.getproperty(A::ArrayOfStructs, sym::Symbol) = getproperty(_getentries(A), sym)
+@inline Base.propertynames(A::ArrayOfStructs) = propertynames(_getentries(A))
+
+@inline Base.size(A::ArrayOfStructs) = size(_getrefcolumn(A))
 
 
 #=
