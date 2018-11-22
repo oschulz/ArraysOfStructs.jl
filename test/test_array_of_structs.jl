@@ -5,6 +5,7 @@ using Test
 
 using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
 using ArraysOfStructs: soarepr_category, soa_coltype, soa_coltype_impl
+using ArraysOfStructs: nested_array_type, _nested_array_type_impl
 
 
 using Random
@@ -62,7 +63,8 @@ foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foo
 foobarntv = (a = [42], b = [4.2], cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = [foobar.dm], e = simplentv)
 
 # A = ArrayOfStructs{SimpleFoo}(simplentv)
-A = ArrayOfStructs{FooBar}(foobarntv)
+A = ArrayOfStructs{SimpleFoo}(nestedntv)
+# A = ArrayOfStructs{FooBar}(foobarntv)
 
 
 @testset "array_of_structs" begin

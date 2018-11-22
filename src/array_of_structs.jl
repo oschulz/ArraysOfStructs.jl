@@ -134,6 +134,23 @@ end
 
 # Note: Probably can't support static arrays, as index/fieldname duality would be ambiguous
 
+Base.@pure function nested_array_type(::Type{T}, outer::Val{dims}) where {T,dims}
+    _nested_array_type_impl(T, dims...)
+end
+
+Base.@pure _nested_array_type_impl(::Type{T}) where {T} = T
+
+Base.@pure _nested_array_type_impl(::Type{T}, N) where {T} = AbstractArray{T, N}
+
+Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
+    AbstractArray{<:_nested_array_type_impl(T, M, dims...), N}
+
+#soa_repr(::Type{T}, x::AbstractArray{U,N}, outer::Val) where {T,N,U} = x
+
+#soa_repr(::Type{T}, AbstractArray{T,N}, x::NamedTuple) where {T,N} = ArrayOfStructs{T}(x)
+
+#soa_repr(::Type{T}, AbstractArray{IAT,N}, x::NamedTuple, Val{N}) where {T,N,IAT<:AbstractArray} = ArrayOfStructs{T}(x)
+
 
 @inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
 @inline _getrefcolumn(A::ArrayOfStructs) = getfield(A, :_refcolumn)
@@ -142,6 +159,8 @@ end
 @inline Base.propertynames(A::ArrayOfStructs) = propertynames(_getentries(A))
 
 @inline Base.size(A::ArrayOfStructs) = size(_getrefcolumn(A))
+
+
 
 
 #=
