@@ -24,16 +24,14 @@ const VectorOfStructs{T,P<:SOACols{1}} = ArrayOfStructs{T,1,P}
 export VectorOfStructs
 
 
+struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N,P<:SOACols{N}} <: AbstractArrayOfStructs{T,N}
+    _entries::P
 
-# Need: Array{ArrayOfStructs}
-
-struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N} <: AbstractArrayOfStructs{T,N}
-    _inner::T
+    NestedArrayOfStructs{T,N,P}(::Val{:unsafe}, entries::P) where {T<:AbstractArrayOfStructs,N,P<:SOACols{N}} = new{T,N,P}(entries)
 end
 
 
-
-
+const MaybeNestedArrayOfStructs{T,N} = Union{ArrayOfStructs{T,N}, NestedArrayOfStructs{T,N}}
 
 
 
@@ -52,8 +50,13 @@ Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
 @inline soa_repr(dims::Val, ::Type{T}, x::AbstractArray{U,N}) where {T,N,U} =
     _soa_repr_leaf(nested_array_type(T, dims), x)
 
-@inline soa_repr(::Val{dims}, ::Type{<:AbstractArray{T,N}}, x::NamedTuple{syms}) where {dims,T,N,syms} =
-    soa_repr(Val{(dims...,N)}(), T, x)
+@inline function soa_repr(::Val{dims}, ::Type{<:AbstractArray{T,N}}, x::NamedTuple{syms}) where {dims,T,N,syms}
+    repr = soa_repr(Val{(dims...,N)}(), T, x)
+    @assert repr isa AbstractArrayOfStructs
+    AT = typeof(repr)
+    entries = _getentries(repr)
+    NestedArrayOfStructs{AT,N,typeof(entries)}(Val{:unsafe}(), entries)
+end
 
 # Not implemented yet:
 # soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T<:StaticArray,N,syms}
@@ -88,17 +91,25 @@ end
 
 
 @inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
-@inline _getcolvalues(A::ArrayOfStructs) = values(_getentries(A))
-@inline _getfirstcol(A::ArrayOfStructs) = _getentries(A)[1]
+@inline _getentries(A::NestedArrayOfStructs) = getfield(A, :_entries)
 
-@inline Base.getproperty(A::ArrayOfStructs, sym::Symbol) = getproperty(_getentries(A), sym)
-@inline Base.propertynames(A::ArrayOfStructs) = propertynames(_getentries(A))
+@inline _getcolvalues(A::MaybeNestedArrayOfStructs) = values(_getentries(A))
 
-@inline Base.size(A::ArrayOfStructs) = size(_getfirstcol(A))
+@inline _getfirstcol(A::MaybeNestedArrayOfStructs) = _getentries(A)[1]
 
-Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, i::Real) where {T,N}
-    #!!!T(map(col -> getindex(col, i), _getcolvalues(A))...)
-    map(col -> getindex(col, i), _getcolvalues(A))
+@inline Base.getproperty(A::MaybeNestedArrayOfStructs, sym::Symbol) = getproperty(_getentries(A), sym)
+@inline Base.propertynames(A::MaybeNestedArrayOfStructs) = propertynames(_getentries(A))
+
+@inline Base.size(A::MaybeNestedArrayOfStructs) = size(_getfirstcol(A))
+
+@inline Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, idxs...) where {T,N}
+    #!!!T(map(col -> getindex(col, idxs...), _getcolvalues(A))...)
+    map(col -> getindex(col, idxs...), _getcolvalues(A))
+end
+
+
+@inline Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs...) where {T,N}
+    T(Val{:unsafe}(), map(col -> getindex(col, idxs), _getentries(A)))
 end
 
 
