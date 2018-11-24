@@ -7,12 +7,14 @@ export AbstractArrayOfStructs
 
 const SOAColumn{N} = AbstractArray{T,N} where T
 const SOACols{N,ncols,colnames} = NamedTuple{colnames,<:NTuple{ncols,SOAColumn{N}}} where {N,ncols,colnames}
+const OuterIdxs = NTuple{N,Tuple} where N
 
-
-struct ArrayOfStructs{T,N,P<:SOACols{N}} <: AbstractArrayOfStructs{T,N}
+struct ArrayOfStructs{T,N,VI<:OuterIdxs,P<:SOACols} <: AbstractArrayOfStructs{T,N}
     _entries::P
+    _outeridxs::VI
 
-    ArrayOfStructs{T,N,P}(::Val{:unsafe}, entries::P) where {T,N,P<:SOACols{N}} = new{T,N,P}(entries)
+    ArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T,N,VI<:Tuple,P<:SOACols} =
+        new{T,N,VI,P}(entries, outeridxs)
 end
 
 export ArrayOfStructs
@@ -24,11 +26,15 @@ const VectorOfStructs{T,P<:SOACols{1}} = ArrayOfStructs{T,1,P}
 export VectorOfStructs
 
 
-struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N,P<:SOACols{N}} <: AbstractArrayOfStructs{T,N}
-    _entries::P
 
-    NestedArrayOfStructs{T,N,P}(::Val{:unsafe}, entries::P) where {T<:AbstractArrayOfStructs,N,P<:SOACols{N}} = new{T,N,P}(entries)
+struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N,VI<:OuterIdxs,P<:SOACols <: AbstractArrayOfStructs{T,N}
+    _entries::P
+    _outeridxs::VINTuple{N,Tuple} where N
+
+    NestedArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T<:AbstractArrayOfStructs,N,P<:SOACols{N}} =
+        new{T,N,VI,P}(entries, outeridxs)
 end
+
 
 
 const MaybeNestedArrayOfStructs{T,N} = Union{ArrayOfStructs{T,N}, NestedArrayOfStructs{T,N}}
@@ -93,6 +99,9 @@ end
 @inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
 @inline _getentries(A::NestedArrayOfStructs) = getfield(A, :_entries)
 
+@inline _getouteridxs(A::ArrayOfStructs) = getfield(A, :_outeridxs)
+@inline _getouteridxs(A::NestedArrayOfStructs) = getfield(A, :_outeridxs)
+
 @inline _getcolvalues(A::MaybeNestedArrayOfStructs) = values(_getentries(A))
 
 @inline _getfirstcol(A::MaybeNestedArrayOfStructs) = _getentries(A)[1]
@@ -109,9 +118,13 @@ end
 
 
 @inline Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs...) where {T,N}
-    T(Val{:unsafe}(), map(col -> getindex(col, idxs), _getentries(A)))
+    #!!!!T(Val{:unsafe}(), map(col -> getindex(col, idxs), _getentries(A)))
+
+    T, map(col -> getindex(col, idxs...), _getentries(A))
 end
 
+
+_recursive_getindex(x, idxs::Tuple, outeridxs::OuterIdxs)
 
 
 #=
