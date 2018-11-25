@@ -13,12 +13,17 @@ const SOACols{N,ncols,colnames} = NamedTuple{colnames,<:NTuple{ncols,SOAColumn{N
 struct ArrayOfStructs{T,N,VI<:Tuple,P<:SOACols} <: AbstractArrayOfStructs{T,N}
     _entries::P
     _outeridxs::VI
-
-    ArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T,N,VI<:Tuple,P<:SOACols} =
-        new{T,N,VI,P}(entries, outeridxs)
 end
 
 export ArrayOfStructs
+
+
+ArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T,N,VI<:Tuple,P<:SOACols} = begin
+    @info T, outeridxs 
+
+    ArrayOfStructs{T,N,VI,P}(entries, outeridxs)
+end
+
 
 ArrayOfStructs{T,N}(entries::Any) where {T,N} = soa_repr(Val{(N,)}(), T, entries)
 
@@ -65,6 +70,10 @@ end
 @inline soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,N,syms} =
     _soa_repr_struct(Val{dims}(), T, x)
 
+#Base.@pure xyz2(::Val{dims}) where {dims} = ntuple(i -> NTuple{dims[1],Int}, Val(length(dims)))
+#Base.@pure outeridxs_type(::Val{dims}) where {dims} = NTuple{sum(dims),Int}
+Base.@pure dummy_outeridxs(::Val{dims}) where {dims} = ntuple(i -> 1, Val{sum(dims) - 1}())
+
 function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,syms}
     nfields_T = fieldcount(T)
     nfields_N = length(syms)
@@ -78,7 +87,8 @@ function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {di
         soa_repr(Val{dims}(), U, value)
     end
     colsnt = NamedTuple{syms}(cols)
-    ArrayOfStructs{T,first(dims)}(Val(:unsafe), colsnt);
+    outeridxs = dummy_outeridxs(Val{dims}())
+    ArrayOfStructs{T,first(dims)}(Val{:unsafe}(), colsnt, outeridxs);
 end
 
 
@@ -99,15 +109,13 @@ end
 @inline Base.size(A::MaybeNestedArrayOfStructs) = size(_getfirstcol(A))
 
 @inline Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, idxs...) where {T,N}
-    #!!!T(map(col -> getindex(col, idxs...), _getcolvalues(A))...)
-    map(col -> getindex(col, idxs...), _getcolvalues(A))
+    # T(map(col -> getindex(col, idxs...), _getcolvalues(A))...)
+    T(map(col -> deepgetindex(col, _getouteridxs(A)..., idxs...), _getcolvalues(A))...)
 end
 
 
-@inline Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs...) where {T,N}
-    #!!!!T(Val{:unsafe}(), map(col -> getindex(col, idxs), _getentries(A)))
-
-    T, map(col -> getindex(col, idxs...), _getentries(A))
+@inline Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs::Integer) where {T,N}
+    T(_getentries(A), (_getouteridxs(A)..., idxs))
 end
 
 
