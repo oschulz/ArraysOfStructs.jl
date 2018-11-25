@@ -4,11 +4,11 @@ using ArraysOfStructs
 using Test
 
 using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
-using ArraysOfStructs: nested_array_type, _nested_array_type_impl, soa_repr 
+using ArraysOfStructs: soa_repr 
 
 
 using Random
-using StaticArrays
+using ArraysOfArrays, StaticArrays
 
 
 struct SimpleFoo
@@ -62,8 +62,8 @@ foobarnt = (a = 42, b = 4.2, cv = (x = [1, 4], y = [2, 5], z = [3, 6]), dm = foo
 foobarntv = (a = [42], b = [4.2], cv = (x = [[1, 4]], y = [[2, 5]], z = [[3, 6]]), dm = [foobar.dm], e = simplentv)
 
 A = VectorOfStructs{SimpleFoo}(simplentv);
-A = VectorOfStructs{NestedFoo}(nestedntv);
-A = VectorOfStructs{FooBar{Int64,Float64}}(foobarntv);
+#A = VectorOfStructs{NestedFoo}(nestedntv);
+#A = VectorOfStructs{FooBar{Int64,Float64}}(foobarntv);
 
 
 @testset "array_of_structs" begin

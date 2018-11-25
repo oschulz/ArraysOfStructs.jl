@@ -7,9 +7,10 @@ export AbstractArrayOfStructs
 
 const SOAColumn{N} = AbstractArray{T,N} where T
 const SOACols{N,ncols,colnames} = NamedTuple{colnames,<:NTuple{ncols,SOAColumn{N}}} where {N,ncols,colnames}
-const OuterIdxs = NTuple{N,Tuple} where N
 
-struct ArrayOfStructs{T,N,VI<:OuterIdxs,P<:SOACols} <: AbstractArrayOfStructs{T,N}
+
+
+struct ArrayOfStructs{T,N,VI<:Tuple,P<:SOACols} <: AbstractArrayOfStructs{T,N}
     _entries::P
     _outeridxs::VI
 
@@ -22,16 +23,16 @@ export ArrayOfStructs
 ArrayOfStructs{T,N}(entries::Any) where {T,N} = soa_repr(Val{(N,)}(), T, entries)
 
 
-const VectorOfStructs{T,P<:SOACols{1}} = ArrayOfStructs{T,1,P}
+const VectorOfStructs{T} = ArrayOfStructs{T,1}
 export VectorOfStructs
 
 
 
-struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N,VI<:OuterIdxs,P<:SOACols <: AbstractArrayOfStructs{T,N}
+struct NestedArrayOfStructs{T<:AbstractArrayOfStructs,N,VI<:Tuple,P<:SOACols} <: AbstractArrayOfStructs{T,N}
     _entries::P
-    _outeridxs::VINTuple{N,Tuple} where N
+    _outeridxs::VI
 
-    NestedArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T<:AbstractArrayOfStructs,N,P<:SOACols{N}} =
+    NestedArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T<:AbstractArrayOfStructs,N,VI<:Tuple,P<:SOACols} =
         new{T,N,VI,P}(entries, outeridxs)
 end
 
@@ -41,30 +42,21 @@ const MaybeNestedArrayOfStructs{T,N} = Union{ArrayOfStructs{T,N}, NestedArrayOfS
 
 
 
-Base.@pure function nested_array_type(::Type{T}, outer::Val{dims}) where {T,dims}
-    _nested_array_type_impl(T, dims...)
-end
-
-Base.@pure _nested_array_type_impl(::Type{T}) where {T} = T
-
-Base.@pure _nested_array_type_impl(::Type{T}, N) where {T} = AbstractArray{T, N}
-
-Base.@pure _nested_array_type_impl(::Type{T}, N, M, dims...) where {T} =
-    AbstractArray{<:_nested_array_type_impl(T, M, dims...), N}
-
-
 @inline soa_repr(dims::Val, ::Type{T}, x::AbstractArray{U,N}) where {T,N,U} =
-    _soa_repr_leaf(nested_array_type(T, dims), x)
+    _soa_repr_leaf(abstract_nestedarray_type(T, dims), x)
+
+_soa_repr_leaf(::Type{T}, x::T) where {T} = x
+_soa_repr_leaf(::Type{T}, x::U) where {T,U} = convert(T, x)
 
 @inline function soa_repr(::Val{dims}, ::Type{<:AbstractArray{T,N}}, x::NamedTuple{syms}) where {dims,T,N,syms}
     repr = soa_repr(Val{(dims...,N)}(), T, x)
     @assert repr isa AbstractArrayOfStructs
     AT = typeof(repr)
     entries = _getentries(repr)
-    NestedArrayOfStructs{AT,N,typeof(entries)}(Val{:unsafe}(), entries)
+    NestedArrayOfStructs{AT,N}(Val{:unsafe}(), entries)
 end
 
-# Not implemented yet:
+# TODO: Not implemented yet:
 # soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T<:StaticArray,N,syms}
 
 @inline soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T<:FieldVector,N,syms} =
@@ -72,11 +64,6 @@ end
 
 @inline soa_repr(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,N,syms} =
     _soa_repr_struct(Val{dims}(), T, x)
-
-
-_soa_repr_leaf(::Type{T}, x::T) where {T} = x
-_soa_repr_leaf(::Type{T}, x::U) where {T,U} = convert(T, x)
-
 
 function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {dims,T,syms}
     nfields_T = fieldcount(T)
@@ -91,7 +78,7 @@ function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {di
         soa_repr(Val{dims}(), U, value)
     end
     colsnt = NamedTuple{syms}(cols)
-    ArrayOfStructs{T,first(dims),typeof(colsnt)}(Val(:unsafe), colsnt);
+    ArrayOfStructs{T,first(dims)}(Val(:unsafe), colsnt);
 end
 
 
@@ -123,8 +110,6 @@ end
     T, map(col -> getindex(col, idxs...), _getentries(A))
 end
 
-
-_recursive_getindex(x, idxs::Tuple, outeridxs::OuterIdxs)
 
 
 #=
