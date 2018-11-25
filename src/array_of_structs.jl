@@ -19,7 +19,7 @@ export ArrayOfStructs
 
 
 ArrayOfStructs{T,N}(::Val{:unsafe}, entries::P, outeridxs::VI = ()) where {T,N,VI<:Tuple,P<:SOACols} = begin
-    @info T, outeridxs 
+    #@info T, outeridxs 
 
     ArrayOfStructs{T,N,VI,P}(entries, outeridxs)
 end
@@ -92,6 +92,10 @@ function _soa_repr_struct(::Val{dims}, ::Type{T}, x::NamedTuple{syms}) where {di
 end
 
 
+@inline _canonical_idxs(shape::NTuple{1,Integer}, idx) = (idx,)
+@inline _canonical_idxs(shape::NTuple{N,Integer}, idx) where {N} = Tuple(CartesianIndices(shape)[idx])
+@inline _canonical_idxs(shape::NTuple{N,Integer}, idxs...) where {N} = ntuple(i -> idxs[i], Val{N}())
+
 
 @inline _getentries(A::ArrayOfStructs) = getfield(A, :_entries)
 @inline _getentries(A::NestedArrayOfStructs) = getfield(A, :_entries)
@@ -108,14 +112,22 @@ end
 
 @inline Base.size(A::MaybeNestedArrayOfStructs) = size(_getfirstcol(A))
 
-@inline Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, idxs...) where {T,N}
+Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, idxs...) where {T,N}
+    Base.@boundscheck checkbounds(A, idxs...)
+    canon_idxs = _canonical_idxs(size(A), idxs...)
     # T(map(col -> getindex(col, idxs...), _getcolvalues(A))...)
-    T(map(col -> deepgetindex(col, _getouteridxs(A)..., idxs...), _getcolvalues(A))...)
+
+    #@info "simple getindex" T _getouteridxs(A) idxs canon_idxs
+    #T(map(col -> deepgetindex(col, _getouteridxs(A)..., canon_idxs...), _getcolvalues(A))...)
+    map(col -> deepgetindex(col, _getouteridxs(A)..., canon_idxs...), _getcolvalues(A))
 end
 
 
-@inline Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs::Integer) where {T,N}
-    T(_getentries(A), (_getouteridxs(A)..., idxs))
+Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs::Integer) where {T,N}
+    #@info "nested getindex" T _getouteridxs(A) idxs
+    Base.@boundscheck checkbounds(A, idxs...)
+    canon_idxs = _canonical_idxs(size(A), idxs...)
+    T(_getentries(A), (_getouteridxs(A)..., canon_idxs...))
 end
 
 

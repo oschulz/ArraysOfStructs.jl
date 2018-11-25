@@ -4,7 +4,7 @@ using ArraysOfStructs
 using Test
 
 using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
-using ArraysOfStructs: soa_repr 
+using ArraysOfStructs: soa_repr, _canonical_idxs
 
 
 using Random
