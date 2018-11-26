@@ -112,19 +112,51 @@ end
 
 @inline Base.size(A::MaybeNestedArrayOfStructs) = size(_getfirstcol(A))
 
-Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N}, idxs...) where {T,N}
+
+@inline _get_datatype(T::UnionAll) = _get_datatype(T.body)
+@inline _get_datatype(T::DataType) = T
+@generated strip_type_parameters(::Type{T}) where {T} = _get_datatype(T).name.wrapper
+
+#=
+@inline function _construct(::Type{T}, fieldvals::Tuple) where {T,NT<:NamedTuple}
+    val_of_fieldnames(T) == val_of_fieldnames(NT) || throw(ArgumentError("Can't convert type $NT to type $T with different field names."))
+    if @generated
+        expr = :($T())
+        for i in Base.OneTo(fieldcount(NT))
+            sym = fieldname(NT, i)
+            U = fieldtype(T, i)
+            push!(expr.args, :(re_struct($U, x.$sym)))
+        end
+        expr
+    else
+        T(ntuple(i -> re_struct(fieldtype(T, i), getfield(x, i)), fieldcount(T))...)
+    end
+end
+=#
+
+
+Base.@propagate_inbounds function Base.getindex(A::ArrayOfStructs{T,N,VI,P}, idxs...) where {T,N,VI,P}
     Base.@boundscheck checkbounds(A, idxs...)
     canon_idxs = _canonical_idxs(size(A), idxs...)
-    # T(map(col -> getindex(col, idxs...), _getcolvalues(A))...)
-
-    #@info "simple getindex" T _getouteridxs(A) idxs canon_idxs
-    #T(map(col -> deepgetindex(col, _getouteridxs(A)..., canon_idxs...), _getcolvalues(A))...)
-    map(col -> deepgetindex(col, _getouteridxs(A)..., canon_idxs...), _getcolvalues(A))
+    allidxs = (_getouteridxs(A)..., canon_idxs...)
+    entries = _getentries(A)
+    if @generated
+        T_stripped = strip_type_parameters(T)
+        expr = :($T_stripped())
+        for i in Base.OneTo(fieldcount(P))
+            push!(expr.args, :(deepgetindex(entries[$i], allidxs...)))
+        end
+        expr
+    else
+        @warn "NOT generated function"
+        T_stripped = strip_type_parameters(T)
+        fieldvals = map(col -> deepgetindex(col, allidxs...), _getcolvalues(A))
+        strip_type_parameters(T)(fieldvals...)
+    end
 end
 
 
 Base.@propagate_inbounds function Base.getindex(A::NestedArrayOfStructs{T,N}, idxs::Integer) where {T,N}
-    #@info "nested getindex" T _getouteridxs(A) idxs
     Base.@boundscheck checkbounds(A, idxs...)
     canon_idxs = _canonical_idxs(size(A), idxs...)
     T(_getentries(A), (_getouteridxs(A)..., canon_idxs...))

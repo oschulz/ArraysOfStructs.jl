@@ -4,7 +4,7 @@ using ArraysOfStructs
 using Test
 
 using ArraysOfStructs: val_of_fieldnames, de_struct_type, de_struct, re_struct
-using ArraysOfStructs: soa_repr, _canonical_idxs
+using ArraysOfStructs: soa_repr, _canonical_idxs, _get_datatype, strip_type_parameters
 
 
 using Random
@@ -42,6 +42,9 @@ struct FooBar{
     dm::UM
     e::SimpleFoo
 end
+
+# FooBar{T,U}(a::T, b::U, cv::TV, dm::UM, e::SimpleFoo) = FooBar{T,U,TV,UM}(a, b, cv, dm, e)
+
 
 
 simplefoo = SimpleFoo(42, 7)
